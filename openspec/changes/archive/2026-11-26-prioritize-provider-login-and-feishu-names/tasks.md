@@ -12,4 +12,6 @@
 
 ## 3. Release
 
-- [ ] 3.1 Update provider documentation and the maintained fork PR, record targeted evidence, build the panel and frontend, and deploy with a backup and a rollback path. Verify the running release and public authentication endpoints.
+- [x] 3.1 Update provider documentation and the maintained fork PR, record targeted evidence, build the panel and frontend, and deploy with a backup and a rollback path. Verify the running release and public authentication endpoints.
+
+Frontend and panel production builds passed. The focused tests covered five backend cases and four frontend cases. The public index and name-selection bundle matched the deployed build, both providers were enabled and the local account records retained their API keys and instance grants.
