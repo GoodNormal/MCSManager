@@ -55,6 +55,31 @@ describe("YSU identity and grants", () => {
     expect(consumeLogin("skin", state, state)).toHaveLength(43);
     expect(() => consumeLogin("skin", state, state)).toThrow();
   });
+  it.each(["  ", "t-example", "u-example", "a-example", env.FEISHU_APP_ID, env.FEISHU_APP_SECRET])(
+    "disables Feishu for an invalid tenant setting (%s) and still enables skin login",
+    (value) => {
+      const config = { ...env, FEISHU_TENANT_KEY: value };
+      expect(providerSettings("feishu", config)).toBeUndefined();
+      expect(providerSettings("skin", config)).toBeDefined();
+    }
+  );
+  it("keeps Feishu tenant validation on the server and sends only OAuth parameters", () => {
+    const { state, url } = startLogin("feishu", feishu);
+    const params = new URL(url).searchParams;
+    expect([...params.keys()].sort()).toEqual([
+      "client_id",
+      "code_challenge",
+      "code_challenge_method",
+      "redirect_uri",
+      "response_type",
+      "state"
+    ]);
+    expect(params.get("client_id")).toBe(env.FEISHU_APP_ID);
+    expect(params.get("redirect_uri")).toBe(feishu.redirect);
+    expect(params.get("code_challenge_method")).toBe("S256");
+    expect(params.get("state")).toBe(state);
+    expect(consumeLogin("feishu", state, state)).toHaveLength(43);
+  });
   it("enforces both dimensions of explicit grants and excludes the host console", () => {
     const user = new User();
     user.permission = ROLE.NODE_ADMIN;

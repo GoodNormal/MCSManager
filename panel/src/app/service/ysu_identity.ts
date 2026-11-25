@@ -9,12 +9,13 @@ export function providerSettings(provider: Provider, env = process.env) {
   const feishu = provider === "feishu";
   const clientId = feishu ? env.FEISHU_APP_ID : env.YSU_SKIN_CLIENT_ID;
   const secret = feishu ? env.FEISHU_APP_SECRET : env.YSU_SKIN_CLIENT_SECRET;
+  const tenant = feishu ? env.FEISHU_TENANT_KEY?.trim() : undefined;
   const nodeIds = (env.YSU_SKIN_NODE_IDS || "").split(",").map((v) => v.trim());
   if (
     !clientId ||
     !secret ||
     (feishu
-      ? !env.FEISHU_TENANT_KEY
+      ? !tenant || /^[tau]-/i.test(tenant) || tenant === clientId || tenant === secret
       : nodeIds.length !== 2 ||
         new Set(nodeIds).size !== 2 ||
         !nodeIds.every((id) => /^[a-f0-9]{32}$/i.test(id)))
@@ -23,7 +24,7 @@ export function providerSettings(provider: Provider, env = process.env) {
   return {
     clientId,
     secret,
-    tenant: env.FEISHU_TENANT_KEY,
+    tenant,
     nodeIds,
     redirect: origin + "/api/ysu-auth/" + provider + "/callback",
     authorize: feishu
@@ -97,7 +98,7 @@ export function startLogin(provider: Provider, settings: Settings) {
     state,
     code_challenge_method: "S256",
     code_challenge: createHash("sha256").update(verifier).digest("base64url"),
-    ...(provider === "skin" ? { scope: "openid profile" } : { target_tenant: settings.tenant! })
+    ...(provider === "skin" ? { scope: "openid profile" } : {})
   }).toString();
   return { state, url: url.toString() };
 }
