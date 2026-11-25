@@ -152,6 +152,7 @@ export async function getInstancesByUuid(
   return {
     uuid: user.uuid,
     userName: user.userName,
+    canRenameFeishu: user.isFeishuAccount,
     loginTime: user.loginTime,
     registerTime: user.registerTime,
     instances: resInstances,

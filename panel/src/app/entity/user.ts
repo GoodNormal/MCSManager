@@ -20,6 +20,10 @@ export class User implements IUser {
   permission: number = 0;
   nodeIds: string[] = [];
   externalIdentity = "";
+  feishuNameChosen = false;
+  get isFeishuAccount() {
+    return this.externalIdentity.startsWith('["feishu",');
+  }
   registerTime: string = "";
   loginTime: string = "";
   instances: Array<IUserApp> = [];

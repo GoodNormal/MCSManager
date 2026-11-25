@@ -35,6 +35,8 @@ class UserSubsystem {
     // injection), blank names and absurd lengths; unicode stays allowed.
     if (!this.validateUserName(config.userName))
       throw new Error($t("TXT_CODE_router.user.invalidUserName"));
+    if (this.existUserName(config.userName!))
+      throw new Error($t("TXT_CODE_router.user.existsUserName"));
     const newUuid = v4().replace(/-/gim, "");
     // Initialize necessary user data
     const instance = new User();
@@ -45,9 +47,12 @@ class UserSubsystem {
     if (config.nodeIds !== undefined) validateNodeIds(config.nodeIds);
     // add to the user system
     this.setInstance(newUuid, instance);
-    await this.edit(instance.uuid, config);
-    // Persistently save user information
-    await Storage.getStorage().store("User", instance.uuid, instance);
+    try {
+      await this.edit(instance.uuid, config);
+    } catch (error) {
+      this.objects.delete(newUuid);
+      throw error;
+    }
     return instance;
   }
 
@@ -62,6 +67,8 @@ class UserSubsystem {
     if (config.userName) {
       if (config.userName !== instance.userName && !this.validateUserName(config.userName))
         throw new Error($t("TXT_CODE_router.user.invalidUserName"));
+      if (config.userName !== instance.userName && this.existUserName(config.userName))
+        throw new Error($t("TXT_CODE_router.user.existsUserName"));
       instance.userName = config.userName;
     }
     if (config.nodeIds !== undefined) {
@@ -103,6 +110,24 @@ class UserSubsystem {
     if (password.length < 9 || password.length > 36) return false;
     const reg = /(?=.*[a-z])(?=.*[A-Z])(?=.*[0-9])/;
     return reg.test(password);
+  }
+
+  async chooseFeishuName(user: User, value: unknown) {
+    if (!user.isFeishuAccount || user.permission < 0) throw new Error($t("TXT_CODE_permission.forbidden"));
+    if (typeof value !== "string" || !this.validateUserName(value))
+      throw new Error($t("TXT_CODE_router.user.invalidUserName"));
+    const userName = value.trim();
+    if (userName !== user.userName && this.existUserName(userName))
+      throw new Error($t("TXT_CODE_router.user.existsUserName"));
+    const previous = { userName: user.userName, feishuNameChosen: user.feishuNameChosen };
+    user.userName = userName;
+    user.feishuNameChosen = true;
+    try {
+      await Storage.getStorage().store("User", user.uuid, user);
+    } catch (error) {
+      Object.assign(user, previous);
+      throw error;
+    }
   }
 
   // Username format guard: 1-64 chars, no ASCII control characters

@@ -18,6 +18,7 @@ export interface UserInstance {
 export interface BaseUserInfo {
   uuid: string;
   userName: string;
+  canRenameFeishu?: boolean;
   loginTime: string;
   registerTime: string;
   instances: UserInstance[];

@@ -81,6 +81,14 @@ export const userInfoApiAdvanced = useDefineApi<
 
 export const ysuLoginProviders = useDefineApi<any, string[]>({ url: "/api/ysu-auth/providers" });
 
+export const chooseFeishuName = useDefineApi<{ data: { userName: string } }, boolean>({
+  url: "/api/ysu-auth/feishu/first-name", method: "POST"
+});
+
+export const renameFeishuAccount = useDefineApi<{ data: { userName: string } }, string>({
+  url: "/api/ysu-auth/feishu/name", method: "PUT"
+});
+
 export const remoteNodeList = useDefineApi<any, NodeStatus[]>({
   url: "/api/service/remote_services_list"
 });

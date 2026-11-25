@@ -58,6 +58,8 @@ export function loginSuccess(ctx: Koa.ParameterizedContext, userName: string, ve
   if (!ctx.session) throw new Error("Session is Null!");
 
   if (user.externalIdentity && user.externalIdentity !== verifiedIdentity) throw new Error("Provider login required");
+  if (user.isFeishuAccount && !user.feishuNameChosen) throw new Error("Account name required");
+  delete ctx.session.feishuNaming;
   ctx.session.ysuIdentity = verifiedIdentity ?? "";
   ctx.session.ysuExpiresAt = verifiedIdentity ? Date.now() + 15 * 60_000 : 0;
 
@@ -115,6 +117,7 @@ export function check(ctx: Koa.ParameterizedContext) {
 
 export function logout(ctx: Koa.ParameterizedContext): boolean {
   if (!ctx.session) return false;
+  delete ctx.session.feishuNaming;
   ctx.session["login"] = null;
   ctx.session["userName"] = null;
   ctx.session["uuid"] = null;

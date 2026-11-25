@@ -24,6 +24,10 @@ Set the origin to the public HTTPS origin without a trailing slash. Set the node
 
 ## Feishu
 
+The login page offers Feishu and YSUMC skin first. Select the panel-account option for the existing local password and two-factor flow. Panel API keys continue to follow the configured local policy.
+
+After Feishu verifies a player, the first login prompts them to choose an available panel account name. Existing Feishu accounts with generated names see the same prompt on their next login. Players can change the name in their user information dialog. The account UUID, provider identity and grants follow the account across renames.
+
 Use the enterprise application in the intended tenant. Find App ID and App Secret under Credentials & Basic Info. Register `https://game.ysumc.net/api/ysu-auth/feishu/callback` under Security Settings → Redirect URLs. Obtain `data.tenant_key` from the authenticated user information endpoint using a member of the intended enterprise. Limit the application's availability to the people who should administer every node. [Feishu developer console](https://open.feishu.cn/app) · [User information](https://open.feishu.cn/document/server-docs/authentication-management/login-state-management/get)
 
 In the Feishu API Explorer, select the intended identity and call `GET /open-apis/authen/v1/user_info` with a `user_access_token`. Copy the response field `data.tenant_key` into `FEISHU_TENANT_KEY`. The panel checks this identifier against the authenticated profile at the callback. It keeps the configured identifier out of the browser authorization URL.

@@ -129,6 +129,10 @@ export default (parameter: IPermissionCfg) => {
 
         if (user?.externalIdentity && (ctx.session.ysuIdentity !== user.externalIdentity ||
             !(ctx.session.ysuExpiresAt > Date.now()))) return logout(ctx);
+        if (user?.isFeishuAccount) {
+          if (!user.feishuNameChosen) return logout(ctx);
+          ctx.session.userName = user.userName;
+        }
         // ban check
         if (user && user.permission < 0) {
           return logout(ctx);

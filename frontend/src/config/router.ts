@@ -322,6 +322,12 @@ const originRouterConfig: RouterConfig[] = [
     }
   },
   {
+    path: "/sso/feishu-name",
+    name: t("TXT_CODE_YSU_CHOOSE_NAME"),
+    component: () => import("@/views/FeishuName.vue"),
+    meta: { permission: ROLE.GUEST, mainMenu: false }
+  },
+  {
     path: "/sso/bind",
     name: t("TXT_CODE_SSO_BIND_TITLE"),
     component: SsoBindLogin,
