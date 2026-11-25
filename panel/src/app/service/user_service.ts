@@ -10,6 +10,12 @@ import { IUserApp, User, UserPassWordType } from "../entity/user";
 import { $t } from "../i18n";
 import { logger } from "./log";
 
+function validateNodeIds(value: unknown): asserts value is string[] {
+  if (!Array.isArray(value) || !value.every(id => typeof id === "string" && /^[a-f0-9]{32}$/i.test(id))) {
+    throw new Error("Invalid node IDs");
+  }
+}
+
 export class TwoFactorError extends Error {}
 
 class UserSubsystem {
@@ -23,22 +29,30 @@ class UserSubsystem {
     logger.info($t("TXT_CODE_systemUser.userCount", { n: this.objects.size }));
   }
 
-  async create(config: IUser): Promise<User> {
+  async create(config: IUser, verifiedIdentity?: string): Promise<User> {
     // Central username format guard for every creation path (panel install,
     // admin create, exchange/SSO). Rejects control characters (log/audit
     // injection), blank names and absurd lengths; unicode stays allowed.
     if (!this.validateUserName(config.userName))
       throw new Error($t("TXT_CODE_router.user.invalidUserName"));
+    if (this.existUserName(config.userName!))
+      throw new Error($t("TXT_CODE_router.user.existsUserName"));
     const newUuid = v4().replace(/-/gim, "");
     // Initialize necessary user data
     const instance = new User();
     instance.uuid = newUuid;
+    instance.externalIdentity = verifiedIdentity || "";
     instance.registerTime = new Date().toLocaleString();
+    // Validate grants before publishing the user in the in-memory index.
+    if (config.nodeIds !== undefined) validateNodeIds(config.nodeIds);
     // add to the user system
     this.setInstance(newUuid, instance);
-    await this.edit(instance.uuid, config);
-    // Persistently save user information
-    await Storage.getStorage().store("User", instance.uuid, instance);
+    try {
+      await this.edit(instance.uuid, config);
+    } catch (error) {
+      this.objects.delete(newUuid);
+      throw error;
+    }
     return instance;
   }
 
@@ -53,7 +67,13 @@ class UserSubsystem {
     if (config.userName) {
       if (config.userName !== instance.userName && !this.validateUserName(config.userName))
         throw new Error($t("TXT_CODE_router.user.invalidUserName"));
+      if (config.userName !== instance.userName && this.existUserName(config.userName))
+        throw new Error($t("TXT_CODE_router.user.existsUserName"));
       instance.userName = config.userName;
+    }
+    if (config.nodeIds !== undefined) {
+      validateNodeIds(config.nodeIds);
+      instance.nodeIds = [...new Set<string>(config.nodeIds)];
     }
     if (config.isInit != null) instance.isInit = Boolean(config.isInit);
     // `!= null` (not truthy): permission=0 (GUEST) must be assignable. Only
@@ -90,6 +110,24 @@ class UserSubsystem {
     if (password.length < 9 || password.length > 36) return false;
     const reg = /(?=.*[a-z])(?=.*[A-Z])(?=.*[0-9])/;
     return reg.test(password);
+  }
+
+  async chooseFeishuName(user: User, value: unknown) {
+    if (!user.isFeishuAccount || user.permission < 0) throw new Error($t("TXT_CODE_permission.forbidden"));
+    if (typeof value !== "string" || !this.validateUserName(value))
+      throw new Error($t("TXT_CODE_router.user.invalidUserName"));
+    const userName = value.trim();
+    if (userName !== user.userName && this.existUserName(userName))
+      throw new Error($t("TXT_CODE_router.user.existsUserName"));
+    const previous = { userName: user.userName, feishuNameChosen: user.feishuNameChosen };
+    user.userName = userName;
+    user.feishuNameChosen = true;
+    try {
+      await Storage.getStorage().store("User", user.uuid, user);
+    } catch (error) {
+      Object.assign(user, previous);
+      throw error;
+    }
   }
 
   // Username format guard: 1-64 chars, no ASCII control characters

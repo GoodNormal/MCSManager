@@ -1,4 +1,7 @@
 {
+  "ysu_superadmin": "Super administrator",
+  "ysu_node_admin": "Node administrator",
+  "ysu_managed_nodes": "Managed nodes",
   "TXT_CODE_00000001": "MCSManager 管理パネルへようこそ",
   "TXT_CODE_10088738": "削除の確認",
   "TXT_CODE_10150756": "イベントトリガータスク",

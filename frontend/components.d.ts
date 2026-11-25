@@ -96,6 +96,7 @@ declare module 'vue' {
     Editor: typeof import('./src/components/Editor.vue')['default']
     Empty: typeof import('./src/components/Empty.vue')['default']
     FadeUpAnimation: typeof import('./src/components/FadeUpAnimation.vue')['default']
+    FeishuNameForm: typeof import('./src/components/FeishuNameForm.vue')['default']
     IconBtn: typeof import('./src/components/IconBtn.vue')['default']
     IframeBox: typeof import('./src/components/IframeBox/index.vue')['default']
     IframeModal: typeof import('./src/components/IframeModal/index.vue')['default']

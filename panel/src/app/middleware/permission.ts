@@ -89,6 +89,8 @@ export default (parameter: IPermissionCfg) => {
     // If it is an API request, perform API-level permission judgment
     const key = ctx.request?.header["x-request-api-key"] || ctx.query.apikey;
     if (key) {
+      if (ctx.query.apikey && ctx.request?.header["x-request-api-key"] &&
+          ctx.query.apikey !== ctx.request.header["x-request-api-key"]) return apiError(ctx);
       const enableApiKey = systemConfig?.enableApiKey || false;
       if (!enableApiKey) return disabledApiKey(ctx);
 
@@ -99,6 +101,7 @@ export default (parameter: IPermissionCfg) => {
       }
 
       const user = getUuidByApiKey(apiKey);
+      if (user?.externalIdentity) return disabledApiKey(ctx);
       if (user && enableApiKey === "ONLY_ADMIN" && user.permission < ROLE.ADMIN)
         return disabledApiKey(ctx);
       if (user && user.permission >= Number(parameter.level)) {
@@ -124,6 +127,12 @@ export default (parameter: IPermissionCfg) => {
       if (ctx.session?.["login"] === true && ctx.session["uuid"] && ctx.session["userName"]) {
         const user = userSystem.getInstance(ctx.session["uuid"]);
 
+        if (user?.externalIdentity && (ctx.session.ysuIdentity !== user.externalIdentity ||
+            !(ctx.session.ysuExpiresAt > Date.now()))) return logout(ctx);
+        if (user?.isFeishuAccount) {
+          if (!user.feishuNameChosen) return logout(ctx);
+          ctx.session.userName = user.userName;
+        }
         // ban check
         if (user && user.permission < 0) {
           return logout(ctx);

@@ -67,6 +67,7 @@ export enum ROLE {
   // eslint-disable-next-line no-unused-vars
   ADMIN = 10,
   // eslint-disable-next-line no-unused-vars
+  NODE_ADMIN = 5,
   USER = 1,
   // eslint-disable-next-line no-unused-vars
   GUEST = 0
@@ -106,7 +107,7 @@ const originRouterConfig: RouterConfig[] = [
     component: LayoutContainer,
     meta: {
       mainMenu: true,
-      permission: ROLE.ADMIN,
+      permission: ROLE.NODE_ADMIN,
       icon: AppstoreOutlined
     },
     children: [
@@ -319,6 +320,12 @@ const originRouterConfig: RouterConfig[] = [
       icon: LinkOutlined,
       customClass: ["nav-button-warning"]
     }
+  },
+  {
+    path: "/sso/feishu-name",
+    name: t("TXT_CODE_YSU_CHOOSE_NAME"),
+    component: () => import("@/views/FeishuName.vue"),
+    meta: { permission: ROLE.GUEST, mainMenu: false }
   },
   {
     path: "/sso/bind",

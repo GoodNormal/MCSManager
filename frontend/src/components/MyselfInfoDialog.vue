@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import CopyButton from "@/components/CopyButton.vue";
+import FeishuNameForm from "@/components/FeishuNameForm.vue";
 import { PERMISSION_MAP } from "@/config/const";
 import { t } from "@/lang/i18n";
 import { confirm2FA, setUserApiKey, updatePassword } from "@/services/apis/user";
@@ -8,10 +9,22 @@ import { useAppToolsStore } from "@/stores/useAppToolsStore";
 import { reportErrorMsg } from "@/tools/validator";
 import type { FormInstance } from "ant-design-vue";
 import { message } from "ant-design-vue";
-import { reactive, ref } from "vue";
+import { reactive, ref, watch } from "vue";
 import { bind2FA } from "../services/apis/user";
 const { state, updateUserInfo, generatedApiKey } = useAppStateStore();
 const { state: tools } = useAppToolsStore();
+const editingName = ref(false);
+watch(
+  () => tools.showUserInfoDialog,
+  () => {
+    editingName.value = false;
+  }
+);
+function nameSaved(name: string) {
+  if (state.userInfo) state.userInfo.userName = name;
+  editingName.value = false;
+  message.success(t("TXT_CODE_d3de39b4"));
+}
 
 const { execute: executeSetUserApiKey, isLoading: setUserApiKeyLoading } = setUserApiKey();
 const { execute: executeUpdatePassword, isLoading: updatePasswordLoading } = updatePassword();
@@ -120,6 +133,13 @@ const disable2FACode = async () => {
           <a-col :span="12">
             <a-form-item :label="t('TXT_CODE_eb9fcdad')">
               <a-tag>{{ state.userInfo?.userName }}</a-tag>
+              <a-button
+                v-if="state.userInfo?.canRenameFeishu"
+                type="link"
+                @click="editingName = !editingName"
+              >
+                {{ t("TXT_CODE_YSU_RENAME") }}
+              </a-button>
             </a-form-item>
           </a-col>
           <a-col>
@@ -129,6 +149,12 @@ const disable2FACode = async () => {
           </a-col>
         </a-row>
 
+        <FeishuNameForm
+          v-if="editingName && state.userInfo?.canRenameFeishu"
+          class="mb-12"
+          :current-name="state.userInfo.userName"
+          @saved="nameSaved"
+        />
         <a-row>
           <a-col :span="12">
             <a-form-item :label="t('TXT_CODE_c5c56801')">
@@ -203,8 +229,7 @@ const disable2FACode = async () => {
           </a-typography-paragraph>
           <a-typography-paragraph v-if="generatedApiKey">
             <pre
-              class="flex flex-between align-center"
-            >{{ generatedApiKey }} <CopyButton size="small" type="text" :value="generatedApiKey" /> </pre>
+              class="flex flex-between align-center">{{ generatedApiKey }} <CopyButton size="small" type="text" :value="generatedApiKey" /> </pre>
           </a-typography-paragraph>
           <a-typography-paragraph v-else-if="state.userInfo?.apiKey">
             <pre>{{ t("TXT_CODE_1e7b57ae") }}</pre>

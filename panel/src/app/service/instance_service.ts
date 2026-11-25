@@ -6,6 +6,7 @@ import path from "path";
 import { MARKET_CACHE_FILE_PATH, SAVE_DIR_PATH } from "../const";
 import RemoteRequest from "../service/remote_command";
 import RemoteServiceSubsystem from "../service/remote_service";
+import { ROLE } from "../entity/user";
 import userSystem from "../service/user_service";
 import { systemConfig } from "../setting";
 
@@ -76,7 +77,22 @@ export async function getInstancesByUuid(
 
   // Advanced functions are optional, analyze each instance data
   let resInstances: IAdvancedInstanceInfo[] = [];
-  if (advanced) {
+  if (user.permission === ROLE.NODE_ADMIN) {
+    for (const daemonId of new Set(user.nodeIds || [])) {
+      if (targetDaemonId && daemonId !== targetDaemonId) continue;
+      const remote = RemoteServiceSubsystem.getInstance(daemonId);
+      if (!remote?.available) continue;
+      const rows = await new RemoteRequest(remote).request("instance/overview");
+      for (const row of rows) {
+        if (!/^[a-f0-9]{32}$/i.test(row.instanceUuid)) continue;
+        resInstances.push({
+          daemonId, instanceUuid: row.instanceUuid, nickname: row.config.nickname,
+          remarks: remote.config.remarks, status: row.status, processType: row.config.processType,
+          endTime: row.config.endTime, lastDatetime: row.config.lastDatetime
+        });
+      }
+    }
+  } else if (advanced) {
     const instances = user.instances;
     for (const iterator of instances) {
       if (targetDaemonId && targetDaemonId !== iterator.daemonId) continue;
@@ -136,10 +152,12 @@ export async function getInstancesByUuid(
   return {
     uuid: user.uuid,
     userName: user.userName,
+    canRenameFeishu: user.isFeishuAccount,
     loginTime: user.loginTime,
     registerTime: user.registerTime,
     instances: resInstances,
     permission: user.permission,
+    nodeIds: user.nodeIds || [],
     apiKey: user.apiKey ? "__MCSM_SECRET_DATA__" : "",
     isInit: user.isInit,
     open2FA: user.open2FA,

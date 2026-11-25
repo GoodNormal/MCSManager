@@ -20,6 +20,7 @@ import modManagerRouter from "./routers/mod_manager_router";
 import overviewRouter from "./routers/overview_router";
 import scheduleRouter from "./routers/schedule_router";
 import settingsRouter from "./routers/settings_router";
+import ysuAuthRouter from "./routers/ysu_auth_router";
 import ssoRouter from "./routers/sso_router";
 import upgradeRouter from "./routers/upgrade_router";
 import userRouter from "./routers/user_overview_router";
@@ -37,6 +38,7 @@ export function mountRouters(app: Koa<Koa.DefaultState, Koa.DefaultContext>) {
   apiRouter.use(userRouter.routes()).use(userRouter.allowedMethods());
   apiRouter.use(scheduleRouter.routes()).use(scheduleRouter.allowedMethods());
   apiRouter.use(settingsRouter.routes()).use(settingsRouter.allowedMethods());
+  apiRouter.use(ysuAuthRouter.routes()).use(ysuAuthRouter.allowedMethods());
   apiRouter.use(ssoRouter.routes()).use(ssoRouter.allowedMethods());
   apiRouter.use(environmentRouter.routes()).use(environmentRouter.allowedMethods());
   apiRouter.use(exchangeRouter.routes()).use(exchangeRouter.allowedMethods());

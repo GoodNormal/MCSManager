@@ -27,7 +27,7 @@ router.post(
       ...getOperationLoggerOperator(ctx),
       target_user_name: userName
     });
-    ctx.body = await register(ctx, userName, passWord, permission);
+    ctx.body = await register(ctx, userName, passWord, permission, ctx.request.body.nodeIds);
   }
 );
 
@@ -72,6 +72,7 @@ router.get(
     // make a copy, delete redundant
     resultPage = JSON.parse(JSON.stringify(resultPage));
     resultPage.data.forEach((v) => {
+      delete (v as Partial<typeof v>).externalIdentity;
       v.passWord = "";
       v.salt = "";
       // TOTP seed & SSO subject are server-side secrets: never expose them to

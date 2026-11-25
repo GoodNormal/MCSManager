@@ -19,6 +19,7 @@ export interface IUser {
   passWord?: string;
   salt?: string;
   permission?: number;
+  nodeIds?: string[];
   registerTime?: string;
   loginTime?: string;
   instances?: Array<any>;

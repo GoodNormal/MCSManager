@@ -1,0 +1,23 @@
+--- a/plugins/yggdrasil-connect/src/Controllers/OIDCController.php
++++ b/plugins/yggdrasil-connect/src/Controllers/OIDCController.php
+@@ -169,6 +169,20 @@
+         if ($user->tokenCan(Scope::PROFILE)) {
+             $resp['nickname'] = $user->nickname;
+             $resp['picture'] = url('avatar/user', $user->uid);
++            // Only the dedicated panel client may receive organizational membership.
++            $clientFile = storage_path('app/mcsm-client-id');
++            $clientId = is_readable($clientFile) ? trim(file_get_contents($clientFile)) : '';
++            $tokenClient = (string) $user->yggdrasilToken()->client_id;
++            if ($clientId !== '' && hash_equals($clientId, $tokenClient)) {
++                abort_if($user->permission < \App\Models\User::NORMAL, 403);
++                $membership = app(\SITMinecraft\Launcher\Access\Membership::class)->describe($user);
++                $resp['ysumc_membership'] = [
++                    'sub' => (string) $user->uid,
++                    'role' => $membership['role'],
++                    'department' => $membership['department'],
++                    'position' => in_array($membership['role'], ['member', 'minister'], true) ? $membership['role'] : null,
++                ];
++            }
+         }
+ 
+         if ($user->tokenCan(Scope::EMAIL)) {

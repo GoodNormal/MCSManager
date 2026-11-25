@@ -18,6 +18,12 @@ export class User implements IUser {
   passWordType: number = UserPassWordType.bcrypt;
   salt: string = "";
   permission: number = 0;
+  nodeIds: string[] = [];
+  externalIdentity = "";
+  feishuNameChosen = false;
+  get isFeishuAccount() {
+    return this.externalIdentity.startsWith('["feishu",');
+  }
   registerTime: string = "";
   loginTime: string = "";
   instances: Array<IUserApp> = [];
@@ -31,6 +37,7 @@ export class User implements IUser {
 
 export enum ROLE {
   ADMIN = 10,
+  NODE_ADMIN = 5,
   USER = 1,
   GUEST = 0,
   BAN = -1

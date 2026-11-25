@@ -1,8 +1,16 @@
 <script setup lang="ts">
+import feishuLogo from "@/assets/feishu.png";
+import skinLogo from "@/assets/ysumc-skin.svg";
 import CardPanel from "@/components/CardPanel.vue";
 import { router } from "@/config/router";
 import { t } from "@/lang/i18n";
-import { loginPageInfo, loginUser, ssoConfig, type SsoPublicConfig } from "@/services/apis";
+import {
+  loginPageInfo,
+  loginUser,
+  ysuLoginProviders,
+  ssoConfig,
+  type SsoPublicConfig
+} from "@/services/apis";
 import { useAppStateStore } from "@/stores/useAppStateStore";
 import { sleep } from "@/tools/common";
 import { markdownToHTML } from "@/tools/safe";
@@ -19,6 +27,8 @@ import { message, Modal } from "ant-design-vue";
 import { onMounted, reactive, ref } from "vue";
 
 const { state: pageInfoResult, execute } = loginPageInfo();
+const { state: ysuProviders, execute: loadProviders } = ysuLoginProviders();
+const showLocalLogin = ref(false);
 const ssoInfo = ref<SsoPublicConfig | null>(null);
 
 const props = defineProps<{
@@ -36,6 +46,13 @@ const { updateUserInfo, isAdmin, state: appConfig } = useAppStateStore();
 
 const loginStep = ref(0);
 const is2Fa = ref(false);
+
+const backToProviders = () => {
+  showLocalLogin.value = false;
+  is2Fa.value = false;
+  formData.password = "";
+  formData.code = "";
+};
 
 const handleLogin = async () => {
   if (!formData.username.trim() || !formData.password.trim()) {
@@ -93,7 +110,7 @@ const handleSsoLogin = () => {
 };
 
 onMounted(async () => {
-  await execute();
+  await Promise.all([execute(), loadProviders().catch(reportErrorMsg)]);
   if (!appConfig.isInstall) router.push({ path: "/install" });
 
   try {
@@ -103,7 +120,7 @@ onMounted(async () => {
     // SSO config may not be available
   }
 
-  if (ssoInfo.value?.enabled && ssoInfo.value?.autoRedirect) {
+  if (!ysuProviders.value?.length && ssoInfo.value?.enabled && ssoInfo.value?.autoRedirect) {
     const query = router.currentRoute.value.query;
     if (!query.sso_error && query.ssoAutoRedirect !== "false") {
       handleSsoLogin();
@@ -151,10 +168,35 @@ onMounted(async () => {
               {{ props.card?.title ? props.card?.title : t("TXT_CODE_3ba5ad") }}
             </div>
           </a-typography-title>
-          <a-typography-paragraph class="mb-20">
-            {{ t("TXT_CODE_5b60ad00") }}
-          </a-typography-paragraph>
+          <div
+            v-if="pageInfoResult?.loginInfo"
+            class="global-markdown-html mb-12"
+            v-html="markdownToHTML(pageInfoResult.loginInfo)"
+          ></div>
           <div class="account-input-container">
+            <a-space
+              v-if="!showLocalLogin && ysuProviders?.length"
+              direction="vertical"
+              class="w-100 mb-12"
+            >
+              <a-button
+                v-for="p in ysuProviders"
+                :key="p"
+                block
+                size="large"
+                :type="p === 'feishu' ? 'primary' : 'default'"
+                :href="'/api/ysu-auth/' + p + '/login'"
+              >
+                <template #icon>
+                  <img class="provider-logo" :src="p === 'feishu' ? feishuLogo : skinLogo" alt="" />
+                </template>
+                {{
+                  p === "feishu"
+                    ? t("TXT_CODE_YSU_FEISHU_LOGIN")
+                    : t("TXT_CODE_SSO_LOGIN_BTN", { name: t("TXT_CODE_YSU_SKIN") })
+                }}
+              </a-button>
+            </a-space>
             <div v-if="ssoInfo?.enabled && ssoInfo?.onlyMode" class="sso-only-container">
               <a-typography-paragraph type="secondary" class="mb-20">
                 {{ t("TXT_CODE_SSO_ONLY_MODE_WARN") }}
@@ -176,7 +218,10 @@ onMounted(async () => {
               </a-button>
             </div>
 
-            <template v-else>
+            <template v-else-if="showLocalLogin">
+              <a-button type="link" class="mb-12" @click="backToProviders">
+                {{ t("TXT_CODE_YSU_BACK_TO_LOGIN") }}
+              </a-button>
               <form @submit.prevent>
                 <div v-if="!is2Fa">
                   <a-input
@@ -224,11 +269,6 @@ onMounted(async () => {
 
               <div class="mt-24 flex-between align-center">
                 <div class="mcsmanager-link">
-                  <div
-                    v-if="pageInfoResult?.loginInfo"
-                    class="global-markdown-html"
-                    v-html="markdownToHTML(pageInfoResult?.loginInfo || '')"
-                  ></div>
                   Powered by
                   <a href="https://mcsmanager.com" target="_blank" rel="noopener noreferrer">
                     MCSManager
@@ -245,7 +285,8 @@ onMounted(async () => {
                   </a-button>
                 </div>
               </div>
-
+            </template>
+            <template v-else>
               <div v-if="ssoInfo?.enabled && !ssoInfo?.onlyMode" class="sso-divider-section">
                 <a-divider>{{ t("TXT_CODE_SSO_LOGIN_DIVIDER") }}</a-divider>
                 <a-button size="large" block @click="handleSsoLogin">
@@ -264,6 +305,9 @@ onMounted(async () => {
                   }}
                 </a-button>
               </div>
+              <a-button type="link" block class="mt-12" @click="showLocalLogin = true">
+                {{ t("TXT_CODE_YSU_LOCAL_LOGIN") }}
+              </a-button>
             </template>
           </div>
         </div>
@@ -305,6 +349,15 @@ onMounted(async () => {
 </style>
 
 <style lang="scss" scoped>
+.provider-logo {
+  width: 1.25em;
+  height: 1.25em;
+  margin-inline-end: 0.5em;
+  vertical-align: -0.25em;
+  border-radius: 4px;
+  background: white;
+}
+
 .logging {
   .login-panel {
     transform: scale(0.94);
