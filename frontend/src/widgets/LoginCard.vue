@@ -2,7 +2,7 @@
 import CardPanel from "@/components/CardPanel.vue";
 import { router } from "@/config/router";
 import { t } from "@/lang/i18n";
-import { loginPageInfo, loginUser, ssoConfig, type SsoPublicConfig } from "@/services/apis";
+import { loginPageInfo, loginUser, ysuLoginProviders, ssoConfig, type SsoPublicConfig } from "@/services/apis";
 import { useAppStateStore } from "@/stores/useAppStateStore";
 import { sleep } from "@/tools/common";
 import { markdownToHTML } from "@/tools/safe";
@@ -19,6 +19,8 @@ import { message, Modal } from "ant-design-vue";
 import { onMounted, reactive, ref } from "vue";
 
 const { state: pageInfoResult, execute } = loginPageInfo();
+const { state: ysuProviders, execute: loadProviders } = ysuLoginProviders();
+onMounted(() => { void loadProviders().catch(reportErrorMsg); });
 const ssoInfo = ref<SsoPublicConfig | null>(null);
 
 const props = defineProps<{
@@ -246,6 +248,11 @@ onMounted(async () => {
                 </div>
               </div>
 
+              <a-space v-if="ysuProviders?.length" direction="vertical" style="width: 100%">
+                <a-button v-for="p in ysuProviders" :key="p" block :href="'/api/ysu-auth/' + p + '/login'">
+                  {{ t("TXT_CODE_SSO_LOGIN_BTN", { name: p === "feishu" ? "飞书 · MC高校锦标赛" : "YSUMC 皮肤站" }) }}
+                </a-button>
+              </a-space>
               <div v-if="ssoInfo?.enabled && !ssoInfo?.onlyMode" class="sso-divider-section">
                 <a-divider>{{ t("TXT_CODE_SSO_LOGIN_DIVIDER") }}</a-divider>
                 <a-button size="large" block @click="handleSsoLogin">

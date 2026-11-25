@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { useAppStateStore } from "@/stores/useAppStateStore";
 import { ALL_DAEMON_MODE } from "@/config/const";
 import { t } from "@/lang/i18n";
 import type { LayoutCard } from "@/types/index";
@@ -53,6 +54,7 @@ defineProps<{
   card: LayoutCard;
 }>();
 
+const { isAdmin: isGlobalAdmin } = useAppStateStore();
 const { isPhone } = useScreen();
 const operationForm = ref({
   instanceName: "",
@@ -565,7 +567,7 @@ onMounted(async () => {
                     {{ computeNodeName(item.ip, item.available, item.remarks) }}
                   </a-menu-item>
                   <a-menu-divider />
-                  <a-menu-item key="toNodesPage" @click="toNodesPage()">
+                  <a-menu-item v-if="isGlobalAdmin" key="toNodesPage" @click="toNodesPage()">
                     <FormOutlined />
                     {{ t("TXT_CODE_28e53fed") }}
                   </a-menu-item>
@@ -591,6 +593,7 @@ onMounted(async () => {
             <a-button
               type="primary"
               :disabled="!currentRemoteNode?.available"
+              v-if="isGlobalAdmin"
               @click="toMarketPage"
             >
               {{ t("TXT_CODE_53408064") }}

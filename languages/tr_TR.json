@@ -1,4 +1,7 @@
 {
+  "ysu_superadmin": "Super administrator",
+  "ysu_node_admin": "Node administrator",
+  "ysu_managed_nodes": "Managed nodes",
   "TXT_CODE_00000001": "MCSManager Paneline Hoş Geldiniz",
   "TXT_CODE_10088738": "Silmeyi onayla",
   "TXT_CODE_10150756": "Olay Tetiklemeli Görev",

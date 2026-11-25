@@ -79,6 +79,8 @@ export const userInfoApiAdvanced = useDefineApi<
   url: "/api/auth/"
 });
 
+export const ysuLoginProviders = useDefineApi<any, string[]>({ url: "/api/ysu-auth/providers" });
+
 export const remoteNodeList = useDefineApi<any, NodeStatus[]>({
   url: "/api/service/remote_services_list"
 });
@@ -165,6 +167,7 @@ export const addUser = useDefineApi<
       username: string;
       password: string;
       permission: number;
+      nodeIds?: string[];
     };
   },
   {

@@ -51,11 +51,15 @@ export function login(
   }
 }
 
-export function loginSuccess(ctx: Koa.ParameterizedContext, userName: string) {
+export function loginSuccess(ctx: Koa.ParameterizedContext, userName: string, verifiedIdentity?: string) {
   const ip = getLoginIp(ctx);
   const user = userSystem.getUserByUserName(userName);
   if (!user) throw new Error($t("TXT_CODE_router.login.nameOrPassError"));
   if (!ctx.session) throw new Error("Session is Null!");
+
+  if (user.externalIdentity && user.externalIdentity !== verifiedIdentity) throw new Error("Provider login required");
+  ctx.session.ysuIdentity = verifiedIdentity ?? "";
+  ctx.session.ysuExpiresAt = verifiedIdentity ? Date.now() + 15 * 60_000 : 0;
 
   // A successful authentication (password or SSO) resets this IP's failure
   // counter. All login paths funnel through here, so SSO resets it too.
@@ -72,8 +76,6 @@ export function loginSuccess(ctx: Koa.ParameterizedContext, userName: string) {
 
   logger.info($t("TXT_CODE_42036f92"));
   logger.info(`[LOGIN] IP: ${ip} Login ${userName} successful!`);
-  logger.info(`[LOGIN] Token: ${ctx.session["token"]}`);
-  logger.info($t("TXT_CODE_42036f92"));
 
   return String(ctx.session["token"]);
 }
@@ -126,7 +128,8 @@ export async function register(
   ctx: Koa.ParameterizedContext,
   userName: string,
   passWord: string,
-  permission: number
+  permission: number,
+  nodeIds?: string[]
 ) {
   let f = true;
   // Check for duplicate usernames.
@@ -138,6 +141,7 @@ export async function register(
     const { uuid } = await userSystem.create({
       userName,
       passWord,
+      nodeIds,
       permission
     });
 

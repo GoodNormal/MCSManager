@@ -1,4 +1,7 @@
 {
+  "ysu_superadmin": "Super administrator",
+  "ysu_node_admin": "Node administrator",
+  "ysu_managed_nodes": "Managed nodes",
   "TXT_CODE_00000001": "MCSManager 관리 패널에 오신 것을 환영합니다.",
   "TXT_CODE_10088738": "삭제 확인",
   "TXT_CODE_10150756": "이벤트로 트리거되는 작업",

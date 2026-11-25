@@ -86,6 +86,7 @@ router.put("/api", permission({ level: ROLE.USER }), async (ctx: Koa.Parameteriz
   try {
     if (user) {
       if (enable) {
+        if (user.externalIdentity) return ctx.throw(403);
         const enableApiKey = systemConfig?.enableApiKey || false;
         if (!enableApiKey) throw new Error($t("TXT_CODE_db253979"));
 

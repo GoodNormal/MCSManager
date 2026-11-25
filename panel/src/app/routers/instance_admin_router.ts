@@ -22,6 +22,16 @@ import { systemConfig } from "../setting";
 import GatewayToken from "../service/gateway_token";
 import { browserFacingAddr } from "../service/proxy_addr";
 
+// Authorize the complete batch before dispatching any operation.
+const scopedBatch: import("koa").Middleware = async (ctx, next) => {
+  const user = userSystem.getInstance(getUserUuid(ctx));
+  if (!user || (user.permission !== ROLE.ADMIN && (!Array.isArray(ctx.request.body) ||
+      !ctx.request.body.every((row: any) => row && isHaveInstanceByUuid(user.uuid, row.daemonId, row.instanceUuid))))) {
+    ctx.throw(403);
+  }
+  return next();
+};
+
 const router = new Router({ prefix: "/instance" });
 
 // [Low-level Permission]
@@ -204,7 +214,7 @@ router.delete(
 
 // [Top-level Permission]
 // Open instance routing in batches
-router.post("/multi_open", permission({ level: ROLE.ADMIN }), async (ctx) => {
+router.post("/multi_open", permission({ level: ROLE.NODE_ADMIN }), scopedBatch, async (ctx) => {
   try {
     const instances = ctx.request.body;
     multiOperationForwarding(instances, async (daemonId: string, instanceUuids: string[]) => {
@@ -233,7 +243,7 @@ router.post("/multi_open", permission({ level: ROLE.ADMIN }), async (ctx) => {
 
 // [Top-level Permission]
 //Close instance routing in batches
-router.post("/multi_stop", permission({ level: ROLE.ADMIN }), async (ctx) => {
+router.post("/multi_stop", permission({ level: ROLE.NODE_ADMIN }), scopedBatch, async (ctx) => {
   try {
     const instances = ctx.request.body;
     multiOperationForwarding(instances, async (daemonId: string, instanceUuids: string[]) => {
@@ -262,7 +272,7 @@ router.post("/multi_stop", permission({ level: ROLE.ADMIN }), async (ctx) => {
 
 // [Top-level Permission]
 // batch terminate instance routing
-router.post("/multi_kill", permission({ level: ROLE.ADMIN }), async (ctx) => {
+router.post("/multi_kill", permission({ level: ROLE.NODE_ADMIN }), scopedBatch, async (ctx) => {
   try {
     const instances = ctx.request.body;
     multiOperationForwarding(instances, async (daemonId: string, instanceUuids: string[]) => {
@@ -289,7 +299,7 @@ router.post("/multi_kill", permission({ level: ROLE.ADMIN }), async (ctx) => {
 
 // [Top-level Permission]
 // restart instance routing in batches
-router.post("/multi_restart", permission({ level: ROLE.ADMIN }), async (ctx) => {
+router.post("/multi_restart", permission({ level: ROLE.NODE_ADMIN }), scopedBatch, async (ctx) => {
   try {
     const instances = ctx.request.body;
     multiOperationForwarding(instances, async (daemonId: string, instanceUuids: string[]) => {

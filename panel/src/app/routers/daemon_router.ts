@@ -1,6 +1,8 @@
 import Router from "@koa/router";
 import { diffConfig } from "../common/config_diff";
 import { ROLE } from "../entity/user";
+import { managesNode } from "../service/permission_service";
+import { getUserFromCtx } from "../service/passport_service";
 import permission from "../middleware/permission";
 import validator from "../middleware/validator";
 import { getOperationLoggerOperator, operationLogger } from "../service/operation_logger";
@@ -12,10 +14,11 @@ const router = new Router({ prefix: "/service" });
 // [Top-level Permission]
 // Get the list of remote services
 // Contains only service information, not a list of instance information
-router.get("/remote_services_list", permission({ level: ROLE.ADMIN }), async (ctx) => {
+router.get("/remote_services_list", permission({ level: ROLE.NODE_ADMIN }), async (ctx) => {
   const result = new Array();
   for (const iterator of RemoteServiceSubsystem.services.entries()) {
     const remoteService = iterator[1];
+    if (!managesNode(getUserFromCtx(ctx), remoteService.uuid)) continue;
     result.push({
       uuid: remoteService.uuid,
       ip: remoteService.config.ip,
@@ -32,10 +35,11 @@ router.get("/remote_services_list", permission({ level: ROLE.ADMIN }), async (ct
 // Query the daemon for the specified instance
 router.get(
   "/remote_service_instances",
-  permission({ level: ROLE.ADMIN }),
+  permission({ level: ROLE.NODE_ADMIN }),
   validator({ query: { daemonId: String, page: Number, page_size: Number } }),
   async (ctx) => {
     const daemonId = String(ctx.query.daemonId);
+    if (!managesNode(getUserFromCtx(ctx), daemonId)) return ctx.throw(403);
     const page = Math.max(1, Number(ctx.query.page) || 1);
     const pageSize = Math.min(50, Math.max(1, Number(ctx.query.page_size) || 10));
     const instanceName = ctx.query.instance_name;
@@ -65,7 +69,7 @@ router.get(
 // Query global instances from multiple daemons
 router.get(
   "/remote_services_instances_global",
-  permission({ level: ROLE.ADMIN }),
+  permission({ level: ROLE.NODE_ADMIN }),
   validator({ query: { page: Number, page_size: Number } }),
   async (ctx) => {
     const page = Math.max(1, Number(ctx.query.page) || 1);
@@ -77,6 +81,7 @@ router.get(
 
     const promises = Array.from(RemoteServiceSubsystem.services.values()).map(
       async (remoteService) => {
+        if (!managesNode(getUserFromCtx(ctx), remoteService.uuid)) return;
         try {
           const instanceResult = await new RemoteRequest(remoteService).request("instance/select", {
             page: page,

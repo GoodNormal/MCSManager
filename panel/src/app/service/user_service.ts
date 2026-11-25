@@ -10,6 +10,12 @@ import { IUserApp, User, UserPassWordType } from "../entity/user";
 import { $t } from "../i18n";
 import { logger } from "./log";
 
+function validateNodeIds(value: unknown): asserts value is string[] {
+  if (!Array.isArray(value) || !value.every(id => typeof id === "string" && /^[a-f0-9]{32}$/i.test(id))) {
+    throw new Error("Invalid node IDs");
+  }
+}
+
 export class TwoFactorError extends Error {}
 
 class UserSubsystem {
@@ -23,7 +29,7 @@ class UserSubsystem {
     logger.info($t("TXT_CODE_systemUser.userCount", { n: this.objects.size }));
   }
 
-  async create(config: IUser): Promise<User> {
+  async create(config: IUser, verifiedIdentity?: string): Promise<User> {
     // Central username format guard for every creation path (panel install,
     // admin create, exchange/SSO). Rejects control characters (log/audit
     // injection), blank names and absurd lengths; unicode stays allowed.
@@ -33,7 +39,10 @@ class UserSubsystem {
     // Initialize necessary user data
     const instance = new User();
     instance.uuid = newUuid;
+    instance.externalIdentity = verifiedIdentity || "";
     instance.registerTime = new Date().toLocaleString();
+    // Validate grants before publishing the user in the in-memory index.
+    if (config.nodeIds !== undefined) validateNodeIds(config.nodeIds);
     // add to the user system
     this.setInstance(newUuid, instance);
     await this.edit(instance.uuid, config);
@@ -54,6 +63,10 @@ class UserSubsystem {
       if (config.userName !== instance.userName && !this.validateUserName(config.userName))
         throw new Error($t("TXT_CODE_router.user.invalidUserName"));
       instance.userName = config.userName;
+    }
+    if (config.nodeIds !== undefined) {
+      validateNodeIds(config.nodeIds);
+      instance.nodeIds = [...new Set<string>(config.nodeIds)];
     }
     if (config.isInit != null) instance.isInit = Boolean(config.isInit);
     // `!= null` (not truthy): permission=0 (GUEST) must be assignable. Only

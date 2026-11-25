@@ -9,6 +9,7 @@ import {
   deleteUser as deleteUserApi,
   editUserInfo,
   getUserInfo,
+  remoteNodeList,
   ssoUnbind as ssoUnbindApi
 } from "@/services/apis";
 import { useAppStateStore } from "@/stores/useAppStateStore";
@@ -41,6 +42,8 @@ interface dataType {
 const { execute, isLoading: getUserInfoLoading } = getUserInfo();
 const { toPage } = useAppRouters();
 const { isPhone } = useScreen();
+const { state: nodeOptions, execute: loadNodes } = remoteNodeList();
+void loadNodes().catch(reportErrorMsg);
 const { state: appState } = useAppStateStore();
 
 const operationForm = ref({
@@ -224,6 +227,7 @@ const userDialog = ref({
           data: {
             username: formData.value.userName,
             password: formData.value.passWord!,
+            nodeIds: formData.value.nodeIds,
             permission: formData.value.permission
           }
         });
@@ -355,6 +359,11 @@ onMounted(async () => {
             {{ item }}
           </a-select-option>
         </a-select>
+      </a-form-item>
+      <a-form-item v-if="formData.permission === 5" :label="t('ysu_managed_nodes')">
+        <a-select v-model:value="formData.nodeIds" mode="multiple"
+          :options="(nodeOptions || []).map(n => ({ value: n.uuid, label: n.remarks || n.uuid }))" />
+
       </a-form-item>
 
       <a-form-item required name="userName" :label="t('TXT_CODE_eb9fcdad')">

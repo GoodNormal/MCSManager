@@ -21,6 +21,7 @@ export interface BaseUserInfo {
   loginTime: string;
   registerTime: string;
   instances: UserInstance[];
+  nodeIds?: string[];
   permission: number;
   apiKey: string;
   isInit: boolean;

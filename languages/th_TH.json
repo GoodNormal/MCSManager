@@ -1,4 +1,7 @@
 {
+  "ysu_superadmin": "Super administrator",
+  "ysu_node_admin": "Node administrator",
+  "ysu_managed_nodes": "Managed nodes",
   "TXT_CODE_00000001": "ยินดีต้อนรับสู่ MCSManager Panel",
   "TXT_CODE_10088738": "ยืนยันว่าจะลบ",
   "TXT_CODE_10150756": "กิจกรรมการติดตามงาน",
