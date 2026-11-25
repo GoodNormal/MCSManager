@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import feishuLogo from "@/assets/feishu.png";
+import skinLogo from "@/assets/ysumc-skin.svg";
 import CardPanel from "@/components/CardPanel.vue";
 import { router } from "@/config/router";
 import { t } from "@/lang/i18n";
@@ -185,10 +187,13 @@ onMounted(async () => {
                 :type="p === 'feishu' ? 'primary' : 'default'"
                 :href="'/api/ysu-auth/' + p + '/login'"
               >
+                <template #icon>
+                  <img class="provider-logo" :src="p === 'feishu' ? feishuLogo : skinLogo" alt="" />
+                </template>
                 {{
-                  t("TXT_CODE_SSO_LOGIN_BTN", {
-                    name: p === "feishu" ? t("TXT_CODE_YSU_FEISHU") : t("TXT_CODE_YSU_SKIN")
-                  })
+                  p === "feishu"
+                    ? t("TXT_CODE_YSU_FEISHU_LOGIN")
+                    : t("TXT_CODE_SSO_LOGIN_BTN", { name: t("TXT_CODE_YSU_SKIN") })
                 }}
               </a-button>
             </a-space>
@@ -344,6 +349,15 @@ onMounted(async () => {
 </style>
 
 <style lang="scss" scoped>
+.provider-logo {
+  width: 1.25em;
+  height: 1.25em;
+  margin-inline-end: 0.5em;
+  vertical-align: -0.25em;
+  border-radius: 4px;
+  background: white;
+}
+
 .logging {
   .login-panel {
     transform: scale(0.94);

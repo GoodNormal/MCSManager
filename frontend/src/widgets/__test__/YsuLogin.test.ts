@@ -4,6 +4,7 @@ import { ref } from "vue";
 import { beforeEach, expect, it, vi } from "vitest";
 import LoginCard from "@/widgets/LoginCard.vue";
 import FeishuNameForm from "@/components/FeishuNameForm.vue";
+import zhCN from "../../../../languages/zh_CN.json";
 
 const api = vi.hoisted(() => ({
   providers: vi.fn(),
@@ -44,7 +45,7 @@ const options = {
   global: {
     stubs: {
       CardPanel: { template: '<div><slot name="body"/></div>' },
-      AButton: { template: "<button><slot/></button>" },
+      AButton: { template: '<button><slot name="icon"/><slot/></button>' },
       AInput: {
         props: ["value"],
         emits: ["update:value"],
@@ -71,6 +72,12 @@ it("shows provider links first and opens the existing password and two-factor fl
     "/api/ysu-auth/feishu/login",
     "/api/ysu-auth/skin/login"
   ]);
+  const providers = w.findAll("button[href]");
+  expect(providers[0].text()).toBe("TXT_CODE_YSU_FEISHU_LOGIN");
+  expect(zhCN.TXT_CODE_YSU_FEISHU_LOGIN).toBe("飞书登录");
+  const logos = providers.map((button) => button.get("img[alt='']").attributes("src"));
+  expect(logos[0]).toContain("feishu.png");
+  expect(logos[1]).toContain("ysumc-skin.svg");
   expect(w.find("input").exists()).toBe(false);
   await w
     .findAll("button")
